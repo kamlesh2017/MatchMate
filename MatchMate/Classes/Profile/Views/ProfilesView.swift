@@ -26,38 +26,48 @@ struct ProfilesView: View {
                         .multilineTextAlignment(.center)
                         .padding()
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(viewModel.profiles, id: \.id) { profile in
-                                ProfileCardView(profile: profile, onAction: { action in
-                                    viewModel.updateProfileStatus(id: profile.id, status: action)
-                                })
-                                .onAppear {
-                                    checkForMoreProfiles(profile)
+                    List {
+                        ForEach(Array(viewModel.profiles.enumerated()), id: \.1.id) { index, profile in
+                            ProfileCardView(profile: profile, index: index, delegate: viewModel)
+                        }
+                        if viewModel.hasMoreData {
+                            VStack(alignment: .center) {
+                                Button(action: {
+                                    viewModel.loadMoreProfiles()
+                                }) {
+                                    Text("Load More Profiles")
+                                        .padding()
+                                        .background(Color.blue)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
                                 }
                             }
+                            .frame(maxWidth: .infinity)
                         }
-                        .padding()
                     }
+                    .listStyle(PlainListStyle())
                 }
             }
             .navigationTitle("MatchMate")
             .onAppear {
-                viewModel.loadProfiles()
+                viewModel.loadInitialProfiles()
             }
         }
     }
     
-    func checkForMoreProfiles(_ profile: UserProfile) {
-        if viewModel.profiles.last?.id == profile.id {
-            viewModel.loadMoreProfiles()
-        }
+    func checkForMoreProfiles() {
+        viewModel.loadMoreProfiles()
     }
+}
+
+protocol ProfileCardViewDelegate: AnyObject {
+    func updateProfileStatus(index: Int, status: UserProfileStatus)
 }
 
 struct ProfileCardView: View {
     let profile: UserProfile
-    let onAction: (UserProfileStatus) -> Void
+    let index: Int
+    weak var delegate: ProfileCardViewDelegate?
 
     var body: some View {
         VStack(spacing: 8) {
@@ -79,27 +89,25 @@ struct ProfileCardView: View {
 
             if profile.status == .none {
                 HStack(spacing: 12) {
-                    Button(action: {
-                        onAction(.accepted)
-                    }) {
-                        Text("Accept")
-                            .frame(maxWidth: .infinity)
-                            .padding(8)
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
+                    Text("Accept")
+                    .frame(maxWidth: .infinity)
+                    .padding(8)
+                    .background(Color.green)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    .onTapGesture(perform: {
+                        delegate?.updateProfileStatus(index: index, status: .accepted)
+                    })
 
-                    Button(action: {
-                        onAction(.declined)
-                    }) {
-                        Text("Decline")
-                            .frame(maxWidth: .infinity)
-                            .padding(8)
-                            .background(Color.red)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
+                    Text("Decline")
+                    .frame(maxWidth: .infinity)
+                    .padding(8)
+                    .background(Color.red)
+                    .foregroundColor(.white)
+                    .cornerRadius(8)
+                    .onTapGesture(perform: {
+                        delegate?.updateProfileStatus(index: index, status: .declined)
+                    })
                 }
                 .frame(maxWidth: .infinity)
             } else {

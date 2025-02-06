@@ -15,8 +15,8 @@ class NetworkManager {
     private let baseURL = "https://randomuser.me/api/"
 
     // Fetch profiles with pagination
-    func fetchProfiles(results: Int, page: Int, completion: @escaping (Result<[UserProfileResponse], Error>) -> Void) {
-        guard let url = URL(string: "\(baseURL)?results=\(results)&page=\(page)") else {
+    func fetchProfiles(page: Int, pageSize: Int, completion: @escaping (Result<[UserProfileResponse], Error>) -> Void) {
+        guard let url = URL(string: "\(baseURL)?results=\(pageSize)&page=\(page)") else {
             completion(.failure(NSError(domain: "Invalid URL", code: 0, userInfo: nil)))
             return
         }
